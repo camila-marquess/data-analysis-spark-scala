@@ -29,8 +29,24 @@ object netflixAnalysis extends App {
     .transform(transformStringDate("effective_date", "effective_date"))
     .drop(col("date_added"))
 
-  data.show()
+  //data.show()
 
+//EDA
+
+  //checando a quantidade de filmes/séries adicionadas por dia
+
+  val dataPerDay = data
+    .transform(moviesPerPeriod("effective_date", "show_id", "count_show_id"))
+
+  //checando o dia que mais teve séries/filmes adicionados na netflix
+  val maxMoviesDay = dataPerDay
+    .select(col("effective_date"), col("count_show_id"))
+    .orderBy(col("count_show_id").desc)
+    .limit(1)
+
+  maxMoviesDay.show()
+
+  //
 
   def readingFile(path: String): DataFrame = {
     val df = spark
@@ -85,5 +101,14 @@ object netflixAnalysis extends App {
     df
       .withColumn(column_transformed, to_date(col(column_selected)))
   }
+
+  def moviesPerPeriod(period: String, column_selected: String, new_column_name: String)(df: DataFrame): DataFrame = {
+    df
+      .groupBy(col(period))
+      .agg(countDistinct(col(column_selected)).as(new_column_name))
+      .orderBy(col(period).desc)
+  }
+
+
 
 }
