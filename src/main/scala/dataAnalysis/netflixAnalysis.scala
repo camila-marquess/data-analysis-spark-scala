@@ -6,6 +6,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.functions.col
 
 
+
 object netflixAnalysis extends App {
 
   val spark = SparkSession
@@ -26,25 +27,33 @@ object netflixAnalysis extends App {
     .transform(getDay("new_date", "day"))
     .transform(getYear("new_date", "year"))
     .transform(concatDateColumns("effective_date", "year", "month", "day"))
-    .transform(transformStringDate("effective_date", "effective_date"))
+    .transform(transformStringDate("effective_date", "effective_date", "release_year"))
     .drop(col("date_added"))
 
-  //data.show()
+  //checar tratamento para country
+ data.select(col("country")).distinct().orderBy("country").show(200)
 
 //EDA
 
-  //checando a quantidade de filmes/séries adicionadas por dia
+  //Quantos filmes/séries foram lançados por ano?
+  //Qual dia que mais teve filmes/séries adicionadas na netflix?
+  //Quantidade de filmes/séries adicionados por dia
 
-  val dataPerDay = data
-    .transform(moviesPerPeriod("effective_date", "show_id", "count_show_id"))
+  val show_type = Seq("Movie", "TV Show")
 
-  //checando o dia que mais teve séries/filmes adicionados na netflix
-  val maxMoviesDay = dataPerDay
-    .select(col("effective_date"), col("count_show_id"))
-    .orderBy(col("count_show_id").desc)
-    .limit(1)
+  for (show_types <- show_type) {
+    data
+    .transform(showsReleasedPerYear(show_types))
+    //.show()
 
-  maxMoviesDay.show()
+    data
+      .transform(maxShowPerDay(show_types))
+      //.show()
+
+    data
+      .transform(showsPerPeriod(show_types))
+      //.show()
+  }
 
   //
 
@@ -97,18 +106,34 @@ object netflixAnalysis extends App {
         concat_ws("-", col(year_column), col(month_column), col(day_column)))
   }
 
-  def transformStringDate(column_selected: String, column_transformed: String)(df: DataFrame): DataFrame = {
+  def transformStringDate(column_selected: String, column_transformed: String, new_column_type: String)(df: DataFrame): DataFrame = {
     df
       .withColumn(column_transformed, to_date(col(column_selected)))
+      .withColumn(new_column_type, col(new_column_type).cast("int"))
   }
 
-  def moviesPerPeriod(period: String, column_selected: String, new_column_name: String)(df: DataFrame): DataFrame = {
+  def showsPerPeriod(show_type: String)(df: DataFrame): DataFrame = {
     df
-      .groupBy(col(period))
-      .agg(countDistinct(col(column_selected)).as(new_column_name))
-      .orderBy(col(period).desc)
+      .groupBy(col("effective_date"))
+      .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
+      .orderBy(col("effective_date").desc)
   }
 
+  def showsReleasedPerYear(show_type: String)(df: DataFrame): DataFrame = {
+    df
+      .filter(col("type").equalTo(show_type))
+      .groupBy(col("release_year"))
+      .agg(countDistinct(col("show_id")).as(s"Total Quantity ${show_type}"))
+      .orderBy(col(s"Total Quantity ${show_type}").desc)
+  }
 
+  def maxShowPerDay(show_type: String)(df: DataFrame): DataFrame = {
+    df
+      .filter(col("type").equalTo(show_type))
+      .groupBy(col("effective_date"))
+      .agg(count(col("show_id")).as(s"Max ${show_type} Added in a Day"))
+      .orderBy(col(s"Max ${show_type} Added in a Day").desc)
+      .limit(1)
+  }
 
 }
