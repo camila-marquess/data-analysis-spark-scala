@@ -52,6 +52,10 @@ object netflixAnalysis extends App {
     data
       .transform(showsPerPeriod(show_types))
       //.show()
+
+    data
+      .transform(showsPerCountry(show_types))
+      .show(100, false)
   }
 
   //
@@ -128,6 +132,7 @@ object netflixAnalysis extends App {
 
   def showsPerPeriod(show_type: String)(df: DataFrame): DataFrame = {
     df
+      .filter(col("type").equalTo(show_type))
       .groupBy(col("effective_date"))
       .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
       .orderBy(col("effective_date").desc)
@@ -148,6 +153,14 @@ object netflixAnalysis extends App {
       .agg(count(col("show_id")).as(s"Max ${show_type} Added in a Day"))
       .orderBy(col(s"Max ${show_type} Added in a Day").desc)
       .limit(1)
+  }
+
+  def showsPerCountry(show_type: String)(df: DataFrame): DataFrame = {
+    df
+      .filter(col("type").equalTo(show_type))
+      .groupBy(col("country"))
+      .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
+      .orderBy(col(s"Count ${show_type}").desc)
   }
 
 }
