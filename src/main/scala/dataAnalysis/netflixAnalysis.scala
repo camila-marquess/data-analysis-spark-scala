@@ -28,10 +28,9 @@ object netflixAnalysis extends App {
     .transform(getYear("new_date", "year"))
     .transform(concatDateColumns("effective_date", "year", "month", "day"))
     .transform(transformStringDate("effective_date", "effective_date", "release_year"))
+    .transform(transformCountry("country"))
     .drop(col("date_added"))
 
-  //checar tratamento para country
- data.select(col("country")).distinct().orderBy("country").show(200)
 
 //EDA
 
@@ -56,6 +55,10 @@ object netflixAnalysis extends App {
   }
 
   //
+
+  //data.select(col("country")).distinct().orderBy("country").show( 1000, false)
+
+
 
   def readingFile(path: String): DataFrame = {
     val df = spark
@@ -110,6 +113,17 @@ object netflixAnalysis extends App {
     df
       .withColumn(column_transformed, to_date(col(column_selected)))
       .withColumn(new_column_type, col(new_column_type).cast("int"))
+  }
+
+  def transformCountry(column_selected: String)(df: DataFrame): DataFrame = {
+    val nonCountries = Seq("Aziz Ansari", "Chuck D.", "Dominic Costa", "Doug Plaut", "Francesc Orella",
+      "Justin \"\"Alyssa Edwards\"\" Johnson", "Lachion Buckingham", "Leonardo Sbaraglia", "Michael Cavalieri",
+      "Rob Morgan", "Tantoo Cardinal", "Tobechukwu \"\"iLLbliss\"\" Ejiofor")
+
+    df
+      .withColumn(column_selected,
+        when(trim(col(column_selected)).isin(nonCountries:_*), null)
+      .otherwise(trim(col(column_selected))))
   }
 
   def showsPerPeriod(show_type: String)(df: DataFrame): DataFrame = {
