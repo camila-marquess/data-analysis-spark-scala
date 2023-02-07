@@ -29,7 +29,13 @@ object netflixAnalysis extends App {
     .transform(concatDateColumns("effective_date", "year", "month", "day"))
     .transform(transformStringDate("effective_date", "effective_date", "release_year"))
     .transform(transformCountry("country"))
+    .transform(transformDurationColumn("duration"))
     .drop(col("date_added"))
+
+
+  data.show(10, false)
+
+  data.select(col("duration")).distinct().orderBy(col("duration")).show(100, false)
 
 
 //EDA
@@ -55,7 +61,7 @@ object netflixAnalysis extends App {
 
     data
       .transform(showsPerCountry(show_types))
-      .show(100, false)
+      //.show(100, false)
   }
 
   //
@@ -128,6 +134,16 @@ object netflixAnalysis extends App {
       .withColumn(column_selected,
         when(trim(col(column_selected)).isin(nonCountries:_*), null)
       .otherwise(trim(col(column_selected))))
+  }
+
+  def transformDurationColumn(column_selected: String)(df: DataFrame): DataFrame = {
+    val nonDuration = Seq("Alan Cumming", "Benn Northover", "Donnell Rawlings", "Itziar Aizpuru", "Jimmy Herman\"",
+      "MC Eiht", "Maurice Everett\"", "Sharon Ooja\"", "Wanda Sykes")
+
+    df
+      .withColumn(column_selected,
+        when(trim(col(column_selected)).isin(nonDuration:_*), null)
+          .otherwise(trim(col(column_selected))))
   }
 
   def showsPerPeriod(show_type: String)(df: DataFrame): DataFrame = {
