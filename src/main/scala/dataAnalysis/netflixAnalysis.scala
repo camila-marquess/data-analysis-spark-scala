@@ -33,9 +33,7 @@ object netflixAnalysis extends App {
     .drop(col("date_added"))
 
 
-  data.show(10, false)
-
-  data.select(col("duration")).distinct().orderBy(col("duration")).show(100, false)
+  //data.select(col("duration")).distinct().orderBy(col("duration")).show(100, false)
 
 
 //EDA
@@ -43,6 +41,8 @@ object netflixAnalysis extends App {
   //Quantos filmes/séries foram lançados por ano?
   //Qual dia que mais teve filmes/séries adicionadas na netflix?
   //Quantidade de filmes/séries adicionados por dia
+  //Qual país teve mais filmes/séries produzidos pela netflix?
+  //Quantidade de filmes/séries por duração
 
   val show_type = Seq("Movie", "TV Show")
 
@@ -62,12 +62,13 @@ object netflixAnalysis extends App {
     data
       .transform(showsPerCountry(show_types))
       //.show(100, false)
+
+    data
+      .transform(showsPerDuration(show_types))
+      //.show(100, false)
   }
 
   //
-
-  //data.select(col("country")).distinct().orderBy("country").show( 1000, false)
-
 
 
   def readingFile(path: String): DataFrame = {
@@ -175,6 +176,14 @@ object netflixAnalysis extends App {
     df
       .filter(col("type").equalTo(show_type))
       .groupBy(col("country"))
+      .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
+      .orderBy(col(s"Count ${show_type}").desc)
+  }
+
+  def showsPerDuration(show_type: String)(df: DataFrame): DataFrame = {
+    df
+      .filter(col("type").equalTo(show_type))
+      .groupBy(col("duration"))
       .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
       .orderBy(col(s"Count ${show_type}").desc)
   }
