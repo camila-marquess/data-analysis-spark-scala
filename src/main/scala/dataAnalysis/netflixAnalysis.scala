@@ -33,9 +33,6 @@ object netflixAnalysis extends App {
     .drop(col("date_added"))
 
 
-  //data.select(col("duration")).distinct().orderBy(col("duration")).show(100, false)
-
-
 //EDA
 
   //Quantos filmes/séries foram lançados por ano?
@@ -139,7 +136,7 @@ object netflixAnalysis extends App {
 
   def transformDurationColumn(column_selected: String)(df: DataFrame): DataFrame = {
     val nonDuration = Seq("Alan Cumming", "Benn Northover", "Donnell Rawlings", "Itziar Aizpuru", "Jimmy Herman\"",
-      "MC Eiht", "Maurice Everett\"", "Sharon Ooja\"", "Wanda Sykes")
+      "MC Eiht", "Maurice Everett\"", "Sharon Ooja\"", "Wanda Sykes", "United States", "1994")
 
     df
       .withColumn(column_selected,
@@ -187,5 +184,4 @@ object netflixAnalysis extends App {
       .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
       .orderBy(col(s"Count ${show_type}").desc)
   }
-
 }
