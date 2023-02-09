@@ -30,6 +30,7 @@ object netflixAnalysis extends App {
     .transform(transformStringDate("effective_date", "effective_date", "release_year"))
     .transform(transformCountry("country"))
     .transform(transformDurationColumn("duration"))
+    .transform(getMainGenre("listed_in", "genre"))
     .drop(col("date_added"))
 
 
@@ -63,6 +64,10 @@ object netflixAnalysis extends App {
     data
       .transform(showsPerDuration(show_types))
       //.show(100, false)
+
+    data
+      .transform(topGenresPerShow(show_types))
+      .show(20)
   }
 
   //
@@ -121,6 +126,12 @@ object netflixAnalysis extends App {
     df
       .withColumn(column_transformed, to_date(col(column_selected)))
       .withColumn(new_column_type, col(new_column_type).cast("int"))
+  }
+
+  def getMainGenre(column_selected: String, new_column: String)(df: DataFrame): DataFrame = {
+    val extractGenre = udf((genre: String) => genre.split(",")(0))
+    df
+      .withColumn(new_column, extractGenre(col(column_selected)))
   }
 
   def transformCountry(column_selected: String)(df: DataFrame): DataFrame = {
@@ -183,5 +194,14 @@ object netflixAnalysis extends App {
       .groupBy(col("duration"))
       .agg(countDistinct(col("show_id")).as(s"Count ${show_type}"))
       .orderBy(col(s"Count ${show_type}").desc)
+  }
+
+  def topGenresPerShow(show_type: String)(df: DataFrame): DataFrame = {
+    df
+      .filter(col("type").equalTo(show_type))
+      .groupBy(col("genre"))
+      .agg(count(col("show_id")).as(s"Top 10 ${show_type} per Genre"))
+      .orderBy(col(s"Top 10 ${show_type} per Genre").desc)
+      .limit(10)
   }
 }
