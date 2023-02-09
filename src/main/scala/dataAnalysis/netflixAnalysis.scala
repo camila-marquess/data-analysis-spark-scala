@@ -4,6 +4,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.to_date
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.functions.col
+import util.mainFunctions._
 
 
 
@@ -73,48 +74,7 @@ object netflixAnalysis extends App {
   //
 
 
-  def readingFile(path: String): DataFrame = {
-    val df = spark
-      .read
-      .option("delimiter", ",")
-      .option("header", "true")
-      .csv(path)
-    df
-  }
 
-  def checkingUniqueValues(column_selected: String)(df: DataFrame): DataFrame = {
-    df
-      .select(column_selected).distinct().groupBy(column_selected).count().orderBy(desc(column_selected))
-  }
-
-  def transformDate(column_selected: String, new_column: String)(df: DataFrame): DataFrame = {
-    df
-      .withColumn(new_column, when(size(split(col(column_selected), " ")) === 3, col(column_selected))
-        .otherwise(null))
-  }
-
-  def getMonth(column_selected: String, new_column: String)(df: DataFrame): DataFrame = {
-    val extractMonth = udf((date: String) => date.split(" ")(0))
-    df
-      .withColumn(new_column, extractMonth(col(column_selected)))
-      .withColumn(new_column, to_date(col(new_column), "MMMM"))
-      .withColumn(new_column, month(col(new_column)))
-  }
-
-  def getDay(column_selected: String, new_column: String)(df: DataFrame): DataFrame = {
-    val extractDay = udf((date: String) => date.split(" ")(1))
-    val removeChar = udf((element: String) => element.replace(",", ""))
-
-    df
-      .withColumn(new_column, extractDay(col(column_selected)))
-      .withColumn(new_column, removeChar(col(new_column)).cast("int"))
-  }
-
-  def getYear(column_selected: String, new_column: String)(df: DataFrame): DataFrame = {
-    val extractYear = udf((date: String) => date.split(" ")(2))
-    df
-      .withColumn(new_column, extractYear(col(column_selected)))
-  }
 
   def concatDateColumns(new_date_column: String, year_column: String, month_column: String, day_column: String)(df: DataFrame):DataFrame = {
     df
