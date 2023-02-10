@@ -5,7 +5,6 @@ import org.apache.spark.sql.functions.col
 import util.mainFunctions._
 
 
-
 object netflixAnalysis extends App {
 
   val spark = SparkSession
@@ -50,14 +49,14 @@ object netflixAnalysis extends App {
 
     data
       .transform(showsPerCountry(show_types))
-      //.show(100, false)
+      //.show()
 
     data
       .transform(showsPerDuration(show_types))
-      //.show(100, false)
+      //.show()
 
     data
       .transform(topGenresPerShow(show_types))
-      .show(20)
+      //.show()
   }
 }
